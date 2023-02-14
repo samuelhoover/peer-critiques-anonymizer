@@ -44,6 +44,3 @@ Using the below file structure as an example,
 run `python3 anonymize_and_aggregate.py --path ../peer-evaluations/section-01/round-01/proposals` while in the `anonymize-and-aggregate` directory to anonymize and aggregate the Section 1 proposal presentation peer critiques. All of the anonymized copies will be stored in the `../peer-evaluations/section-01/round-01/proposals/graded-copies` directory.
 
 Make sure to install the required packages. Run `pip install -r requirements.txt` from this directory if unsure.
-
-# Contact
-Contact hooversamuelc@gmail.com if you have any questions.

@@ -1,6 +1,6 @@
 # ChE-401-402-peer-critiques-anonymizer
 
-This module anonymizes and aggregates the peer critiques for CHEM-ENG 401/402 in the given directory. Written by Akash Jain for CHE-402-SPRING-2020, modified by Sam Hoover for CHE-401-FALL-2022.
+This module automatically anonymizes and aggregates the peer critiques for CHEM-ENG 401/402 in the given directory. Written by Akash Jain for CHE-402-SPRING-2020, modified by Sam Hoover for CHE-401-FALL-2022.
 
 Run code with `python3 anonymize_and_aggregate.py --path <path to folder with submissions>`.
 

@@ -108,18 +108,16 @@ class Anonymizer():
                 wb_obj.worksheets[0]['D6'] = ''  # remove reviewer name
 
                 sheet_obj = wb_obj.active
+                exp = sheet_obj.cell(row=14, column=4).value
+                speaker = sheet_obj.cell(row=10, column=4).value
+                if speaker is None:  # if empty sheet, skip
+                    print(f'An exception occured in review #{count:02}')
+                    break
 
-                # save and rename graded sheet
-                nem = f'{xls.split(".")[0]}graded.xlsx'
-                for i in [14, 10]:  # indices for experiment, speaker
-                    cell_obj = sheet_obj.cell(row=i, column=4)
-                    nem = f'{cell_obj.value}_{nem}'
-
-                if set(nem.split('_')[:2]) != {'None'}:  # if not empty sheet
-                    nem = f'{count:02}_{nem}'.replace(' ', '-')  # anonymized sheet file name
-                    wb_obj.save(filename=os.path.join(save_path, nem.lower()))
-                    
-                    count += 1
+                nem = f'{count:02}_{speaker}_{exp}_graded.xlsx'.lower().replace(' ', '-')
+                wb_obj.save(filename=os.path.join(save_path, nem))
+                
+                count += 1
 
     def aggregate(self, path):
         print(set([x.lower().split('_')[1] for x in os.listdir(os.path.join(path, 'graded_copies'))]))

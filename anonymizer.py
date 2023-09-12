@@ -68,9 +68,14 @@ import argparse
 import openpyxl
 
 
+# TODO:
+# add email capability (will need to download student email list and match names based on similarity)
+
+
 class Anonymizer():
     def __init__(self, path=''):
         self.path = path
+
 
     def get_path(self):
         """

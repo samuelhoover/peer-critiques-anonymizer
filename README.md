@@ -1,11 +1,12 @@
 # ChE-401-402-peer-critiques-anonymizer
 
-This module anonymizes and aggregates the peer critiques in the given directory.
+This module anonymizes, aggregates, and distributes the peer critiques 
+in the given directory.
 
-Written by Akash Jain for CHE-402-SPRING-2020,
-modified by Sam Hoover for CHE-401-FALL-2022 and CHE-401-FALL-2023.
+Written by Akash Jain for ChE 402 in Spring 2020,
+modified by Sam Hoover for ChE 401 for Fall 2022 & Fall 2023.
 
-Run code with `python3 anonymizer.py --path <path to folder with submissions>`.
+Run code with `python3 anonymizer.py -s <path to folder with submissions>`.
 
 # DEMO
 
@@ -14,7 +15,7 @@ Using the below file structure as an example,
 ```
 =======================================================================
 +---CHEM-ENG 401/402
-|   +---anonymize_and_aggregate (this directory)
+|   +---anonymizer (this directory)
 |   |       anonymizer.py
 |   |       requirements.txt
 |   |
@@ -50,9 +51,12 @@ Using the below file structure as an example,
 =======================================================================
 ```
 
-run `python3 anonymizer.py --path ../peer-evaluations/section-01/round-01/proposals`
-from the `anonymize-and-aggregate` directory to anonymize and aggregate the Section 1
-proposal presentation peer critiques. All of the anonymized copies will be stored in the
+run `python3 anonymizer.py -s 
+../peer-evaluations/section-01/round-01/proposals`
+from the `anonymizer` directory to anonymize, aggregate, and
+distribute the Section 1 proposal presentation peer critiques. All of 
+the anonymized copies will be stored in the
 `../peer-evaluations/section-01/round-01/proposals/speakers` directory.
 
-Make sure to install the required packages. Run `pip install -r requirements.txt` from this directory if unsure.
+Make sure to install the required packages. Run 
+`pip install -r requirements.txt` if unsure.

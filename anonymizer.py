@@ -11,7 +11,7 @@ Written by Akash Jain for ChE 402 in Spring 2020,
 modified by Sam Hoover for ChE 401 in Fall 2022 & Fall 2023.
 
 Run code with 
-`python3 anonymizer.py --path <path to folder with submissions>`.
+`python anonymizer.py --path <path to folder with submissions>`.
 
 ************
 *** DEMO ***
@@ -56,7 +56,7 @@ Using the below file structure as an example,
 :   :   :   :   :   :
 =======================================================================
 
-run `python3 anonymizer.py --path 
+run `python anonymizer.py --path 
 ../peer-evaluations/section-01/round-01/proposals`
 from the `anonymize-and-aggregate` directory to anonymize and aggregate 
 the Section 1 proposal presentation peer critiques. All of the 
@@ -66,66 +66,61 @@ anonymized copies will be stored in the
 Make sure to install the required packages. Run 
 `pip install -r requirements.txt` if unsure.
 """
-import os
+# pyright: basic
 
+import argparse
+import os
+import smtplib
+from email.message import EmailMessage
+
+import openpyxl
+import pandas as pd
 
 # TODO:
 # match names based on similarity rather than manually edit names
+# remove openpyxl dependencies and just use pandas
 
 
-class Anonymizer():
-    def __init__(self, src='.', dst='.', pwd=''):
+class Anonymizer:
+    def __init__(self, src: str = ".", dst: str = ".", pwd: str = "") -> None:
         self.src = src
         self.dst = dst
         self.pwd = pwd
 
-
-    def get_args(self):
+    def get_args(self) -> argparse.Namespace:
         """
         parse the argument from the command line.
 
         returns:
         - path ([string]): path to directory with submissions
         """
-        import argparse
-
-
-        parser = argparse.ArgumentParser()
+        parser: argparse.ArgumentParser = argparse.ArgumentParser()
         parser.add_argument(
-            '-s', '--source', action='store',
-            help='path to directory with peer reviews'
+            "-s", "--source", action="store", help="path to directory with peer reviews"
         )
 
         return parser.parse_args()
 
-
-    def anonymize_reviews(self, src):
+    def anonymize_reviews(self, src: str) -> None:
         """
-        Remove the name of reviewer and save graded files 
+        Remove the name of reviewer and save graded files
         in .xlxs format.
 
         Arguments:
         - src ([string]): path to directory with submissions
         """
-        import openpyxl
-        import shutil
+        print("Begin anonymizing peer critiques...")
 
-
-        print('Begin anonymizing peer critiques...')
-
-        dst = os.path.join(src, 'speakers')
+        dst: str = os.path.join(src, "speakers")
 
         # check if graded_copies already exists
-        if not os.path.exists(dst):
-            speakers = {}
+        if not os.path.exists(path=dst):
 
             # create directory for anonymized copies
-            os.mkdir(dst)
+            os.mkdir(path=dst)
 
             count = 1
-            reviewers = [
-                x for x in os.listdir(src) if x.endswith('_file')
-            ]
+            reviewers: list[str] = [x for x in os.listdir(src) if x.endswith("_file")]
 
             # cycle through reviewers
             for rev in reviewers:
@@ -133,122 +128,104 @@ class Anonymizer():
                 for xls in os.listdir(os.path.join(src, rev)):
 
                     # create path to spreadsheet
-                    xls = os.path.join(src, rev, xls)
-                    
+                    xls: str = os.path.join(src, rev, xls)
+
                     # load spreadsheet
-                    wb_obj = openpyxl.load_workbook(
-                        xls, data_only=True
+                    wb_obj: openpyxl.Workbook = openpyxl.load_workbook(
+                        filename=xls, data_only=True
                     )
-                    
+
                     # remove reviewer name
-                    wb_obj.worksheets[0]['D6'] = ''
+                    wb_obj.worksheets[0]["D6"] = ""
 
                     sheet_obj = wb_obj.active
 
-                    # extract, transform to lower case, and replace 
+                    # extract, transform to lower case, and replace
                     # space with hyphen if cells not empty, else skip
                     try:
-                        sp = sheet_obj.cell(
-                            row=10, column=4
-                        ).value.lower().strip().replace(' ', '-')
-                        exp = sheet_obj.cell(
-                            row=14, column=4
-                        ).value.lower().strip().replace(' ', '-')
-                    except:  # else, skip
+                        sp: str = (
+                            sheet_obj.cell(row=10, column=4)
+                            .value.lower()
+                            .strip()
+                            .replace(" ", "-")
+                        )
+                        exp: str = (
+                            sheet_obj.cell(row=14, column=4)
+                            .value.lower()
+                            .strip()
+                            .replace(" ", "-")
+                        )
+                    except ValueError as e:  # else, skip
                         print(
-                            f'An exception occured in review '
-                            f'#{count:02} -> {rev}.'
+                            f"{e}: An exception occured in review "
+                            f"#{count:02} -> {rev}."
                         )
                         break
 
                     # anonymized copy file name
-                    nem = f'{count:02}_{sp}_{exp}_anonymized_copy.xlsx'
+                    nem: str = f"{count:02}_{sp}_{exp}_anonymized_copy.xlsx"
 
-                    # create folder for speaker if does not exist, 
-                    # save to folder
-                    if sp in speakers:
-                        speakers[sp].append(nem)
-                    else:
-                        speakers[sp] = [nem]
-                    
                     # check if folder exists for speaker, if not create
                     if not os.path.exists(os.path.join(dst, sp)):
                         os.mkdir(os.path.join(dst, sp))
 
                     # save anonymized copy to folder for speaker
                     wb_obj.save(filename=os.path.join(dst, sp, nem))
-                    
+
                     count += 1
-            
-            print('Done!\n')
-        
+
+            print("Done!\n")
+
         else:
-            print(
-                'Anonymized peer critiques already exists, '
-                'stopping...\n'
-            )
+            print("Anonymized peer critiques already exists, " "stopping...\n")
 
-    
-    def send_emails(self, sp_dir, pwd):
-        import pandas as pd
-        import smtplib
-
-        from email.message import EmailMessage
-
-
-        print('Begin peer critique distribution...')
+    def send_emails(self, sp_dir: str, pwd: str) -> None:
+        print("Begin peer critique distribution...")
 
         # get peer critique type
-        rev_type = sp_dir.split('/')[2].split('_')[0]
+        rev_type: str = sp_dir.split("/")[2].split("_")[0]
 
         # get round number
-        round_num = sp_dir.split('/')[2].split('_')[1]
+        round_num: str = sp_dir.split("/")[2].split("_")[1]
 
-        df = pd.read_csv('student_email_list.csv')
+        df: pd.DataFrame = pd.read_csv("student_email_list.csv")
         for sp in os.listdir(sp_dir):
             # get speaker's email
             try:
-                sp_email = df.loc[
-                    sp == df['name'], 'Email address'
-                ].values[0]
-            except:  # ask if speaker's email not found
+                sp_email = df.loc[sp == df["name"], "Email address"].values[0]
+            except ValueError as e:  # ask if speaker's email not found
                 sp_email = input(
-                    f'Could not pull the email address for {sp}, '
-                    f'enter their email address: '
+                    f"{e}: Could not pull the email address for {sp}, "
+                    f"enter their email address: "
                 )
 
-            msg = EmailMessage()
-            msg['Subject'] = (
-                f'Peer critiques for round {round_num} '
-                f'{rev_type} presentation'
+            msg: EmailMessage = EmailMessage()
+            msg["Subject"] = (
+                f"Peer critiques for round {round_num} " f"{rev_type} presentation"
             )
-            msg['From'] = 'samuelhoover@umass.edu'
-            msg['To'] = sp_email
+            msg["From"] = "samuelhoover@umass.edu"
+            msg["To"] = sp_email
 
             for f in os.listdir(os.path.join(sp_dir, sp)):
-                with open(os.path.join(sp_dir, sp, f), 'rb') as atchmt:
+                with open(os.path.join(sp_dir, sp, f), "rb") as atchmt:
                     msg.add_attachment(
                         atchmt.read(),
-                        maintype='application',
-                        subtype='xlsx',
-                        filename=f
+                        maintype="application",
+                        subtype="xlsx",
+                        filename=f,
                     )
 
-            with smtplib.SMTP('smtp.gmail.com', 587) as smtp_server:
+            with smtplib.SMTP("smtp.gmail.com", 587) as smtp_server:
                 smtp_server.starttls()
-                smtp_server.login(msg['From'], pwd)
-                smtp_server.sendmail(
-                    msg['From'],
-                    msg['To'],
-                    msg.as_string()
-                )
+                smtp_server.login(msg["From"], pwd)
+                smtp_server.sendmail(msg["From"], msg["To"], msg.as_string())
 
-            print(f'Email to {sp_email} sent!')
-        
-        print('Done!\n')
+            print(f"Email to {sp_email} sent!")
+
+        print("Done!\n")
 
 
-def create_email_list(src_csv):
+def create_email_list(src_csv: str) -> None:
     """
     Create readable CSV file from downloaded student list.
 
@@ -260,52 +237,45 @@ def create_email_list(src_csv):
     Args:
         src_csv ([string]): path to .csv file of student list
     """
-    import pandas as pd
-
-
     # read in CSV, delete non-students, and "Groups" column
-    df = pd.read_csv(
-        src_csv
-    ).dropna().reset_index().drop(columns=['index', 'Groups'])
-    
+    df: pd.DataFrame = (
+        pd.read_csv(src_csv).dropna().reset_index().drop(columns=["index", "Groups"])
+    )
+
     # create full name in style "forename-surname"
-    df['name'] = df[
-        ['First name', 'Last name']
-    ].apply('-'.join, axis=1).str.lower()
+    df["name"] = df[["First name", "Last name"]].apply("-".join, axis=1).str.lower()
 
     # save new table as CSV
-    df.to_csv('student_email_list.csv')
+    df.to_csv("student_email_list.csv")
 
     # delete original CSV file
     os.remove(src_csv)
 
-    print('Created student email list\n')
+    print("Created student email list\n")
 
 
-def main():
+def main() -> None:
     """
     Get source and destination paths and then anonymize and aggregate
     peer critiques.
     """
-    if not os.path.isfile('student_email_list.csv'):
-        src = input(
-            'Please enter the full file name for the student list: '
-        )
-        create_email_list(src)
-    
-    anonymizer = Anonymizer()
-    args = anonymizer.get_args()
-    anonymizer.anonymize_reviews(args.source)
+    if not os.path.isfile("student_email_list.csv"):
+        src: str = input("Please enter the full file name for the student list: ")
+        create_email_list(src_csv=src)
+
+    anonymizer: Anonymizer = Anonymizer()
+    args: argparse.Namespace = anonymizer.get_args()
+    anonymizer.anonymize_reviews(src=args.source)
     input(
         "Verify spelling of speakers' names of folders are correct, "
         "ensure reviewers names are removed, and make sure to "
         "delete any empty folders, press ENTER to continue: \n"
     )
     anonymizer.send_emails(
-        os.path.join(args.source, 'speakers'),
-        open('app.pwd').read().rsplit()[0]
+        sp_dir=os.path.join(args.source, "speakers"),
+        pwd=open("app.pwd").read().rsplit()[0],
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
